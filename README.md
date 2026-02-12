@@ -17,6 +17,27 @@ Define your configuration schema once and resolve values from multiple sources (
 - ✅ **Computed Properties**: Add derived fields like Pydantic's `@computed_field`
 - ✅ **Extensible**: Create custom resolvers for any configuration source
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Core Concepts](#core-concepts)
+  - [Configuration Schema](#configuration-schema)
+  - [Resolvers](#resolvers)
+  - [Nested Configuration](#nested-configuration)
+- [Advanced Features](#advanced-features)
+  - [Computed Properties](#settings-with-computed-properties-recommended)
+  - [Automatic Nested Computed Properties](#automatic-nested-computed-properties)
+  - [Immutable Configuration](#immutable-configuration)
+  - [Type Coercion](#type-coercion)
+  - [Custom Resolvers](#custom-resolvers)
+- [Examples](#examples)
+- [API Reference](#api-reference)
+- [TypeScript Support](#typescript-support)
+- [Comparison with Pydantic Settings](#comparison-with-pydantic-settings)
+- [Error Handling](#error-handling)
+- [Best Practices](#best-practices)
+
 ## Installation
 
 ```bash
