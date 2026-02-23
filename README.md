@@ -1,7 +1,5 @@
 # Tydantic Settings
 
-![Coverage](https://img.shields.io/badge/coverage-97.85%25-brightgreen)
-
 A flexible, type-safe configuration management library for TypeScript applications, inspired by [Pydantic Settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/) and built on [TypeBox](https://github.com/sinclairzx81/typebox).
 
 Define your configuration schema once and resolve values from multiple sources (environment variables, `.env` files, AWS Secrets Manager, and more) with a clear priority order.
