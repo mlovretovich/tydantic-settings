@@ -134,7 +134,7 @@ describe('createSettings', () => {
           port: Settings.Number({ default: 5432 }),
         },
         {
-          url: cfg => `postgres://${cfg.host}:${cfg.port}`,
+          url: (cfg: any) => `postgres://${cfg.host}:${cfg.port}`,
         }
       ),
       apiKey: Settings.Optional(Settings.String()),
@@ -260,7 +260,7 @@ describe('createSyncSettings', () => {
           port: Settings.Number({ default: 5432 }),
         },
         {
-          url: cfg => `postgres://${cfg.host}:${cfg.port}`,
+          url: (cfg: any) => `postgres://${cfg.host}:${cfg.port}`,
         }
       ),
       apiKey: Settings.Optional(Settings.String()),
@@ -451,16 +451,16 @@ describe('Settings', () => {
         { summary: cfg => `${cfg.id}:${cfg.middle.name}` }
       );
 
-      const config = createSyncSettings(OuterConfig.schema, [], {
+      const config: any = createSyncSettings(OuterConfig.schema, [], {
         computed: OuterConfig.computed,
       });
 
       expect(config.id).toBe('outer');
       expect(config.middle.name).toBe('middle');
       expect(config.middle.inner.value).toBe('inner');
-      expect((config as any).summary).toBe('outer:middle');
-      expect((config.middle as any).fullName).toBe('middle/inner');
-      expect((config.middle.inner as any).computed).toBe('computed:inner');
+      expect(config.summary).toBe('outer:middle');
+      expect(config.middle.fullName).toBe('middle/inner');
+      expect(config.middle.inner.computed).toBe('computed:inner');
     });
   });
 

@@ -37,9 +37,10 @@ export function processNestedBundles(
       extractedProperties[key] = value.schema;
 
       // Scope each computed property to this path
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       for (const [computedKey, computedFn] of Object.entries(value.computed) as [
         string,
-        (config: any) => any,
+        (config: any) => unknown,
       ][]) {
         collectedComputed[`${currentPath}.${computedKey}`] = (fullConfig: any) => {
           // Navigate to the nested object

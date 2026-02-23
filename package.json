@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "typecheck": "tsc --project tsconfig.check.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

@@ -58,7 +58,7 @@ export function processResolvedConfig<T extends TSchema>(
   // 3. Validate against schema
   if (!Value.Check(schema as any, finalConfig)) {
     const errors = [...Value.Errors(schema as any, finalConfig)].map(
-      e => `  - ${e.message} (at path: "${(e as any).path}")`
+      e => `  - ${e.message} (at path: "${String((e as any).path)}")`
     );
     throw new Error(`\n❌ Invalid application configuration:\n${errors.join('\n')}`);
   }

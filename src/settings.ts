@@ -44,7 +44,7 @@ import {
  * ```
  */
 // Overload 1: SchemaWithComputed bundle
-export async function createSettings<TBundle extends SchemaWithComputed<TObject, any, any>>(
+export async function createSettings<TBundle extends SchemaWithComputed>(
   bundle: TBundle,
   resolvers: SettingsResolver[],
   options?: Omit<ProcessConfigOptions<InferConfigType<TBundle>>, 'computed'>
@@ -60,7 +60,7 @@ export async function createSettings(
   schemaOrBundle: TSchema | SchemaWithComputed,
   resolvers: SettingsResolver[],
 
-  options?: ProcessConfigOptions<any>
+  options?: ProcessConfigOptions
 ): Promise<any> {
   // Detect if first arg is a bundle
   const isBundle = isSchemaWithComputed(schemaOrBundle);
@@ -121,7 +121,7 @@ export async function createSettings(
  * ```
  */
 // Overload 1: SchemaWithComputed bundle
-export function createSyncSettings<TBundle extends SchemaWithComputed<TObject, any, any>>(
+export function createSyncSettings<TBundle extends SchemaWithComputed>(
   bundle: TBundle,
   resolvers: SyncSettingsResolver[],
   options?: Omit<ProcessConfigOptions<InferConfigType<TBundle>>, 'computed'>
@@ -137,7 +137,7 @@ export function createSyncSettings(
   schemaOrBundle: TSchema | SchemaWithComputed,
   resolvers: SyncSettingsResolver[],
 
-  options?: ProcessConfigOptions<any>
+  options?: ProcessConfigOptions
 ): any {
   // Detect if first arg is a bundle
   const isBundle = isSchemaWithComputed(schemaOrBundle);
@@ -246,7 +246,8 @@ export function Settings<
   };
 }
 
-// Attach static type helpers to Settings
+// Attach static type helpers to Settings (TypeBox methods are standalone, no `this` binding)
+/* eslint-disable @typescript-eslint/unbound-method */
 Settings.String = Type.String;
 Settings.Number = Type.Number;
 Settings.Boolean = Type.Boolean;
@@ -256,6 +257,7 @@ Settings.Array = Type.Array;
 Settings.Object = Type.Object;
 Settings.Literal = Type.Literal;
 Settings.Union = Type.Union;
+/* eslint-enable @typescript-eslint/unbound-method */
 
 // ============================================================================
 // defineConfig - Singleton Factory (Async)
@@ -305,9 +307,9 @@ export interface DefineConfigOptions<TResolver = SettingsResolver> {
  * console.log(config.database.url);
  * ```
  */
-export function defineConfig<TBundle extends SchemaWithComputed<TObject, any, any>>(
+export function defineConfig<TBundle extends SchemaWithComputed>(
   bundle: TBundle,
-  options: DefineConfigOptions<SettingsResolver>
+  options: DefineConfigOptions
 ): {
   getConfig: () => Promise<DeepReadonly<InferConfigType<TBundle>>>;
   resetConfig: () => void;
@@ -317,10 +319,11 @@ export function defineConfig<TBundle extends SchemaWithComputed<TObject, any, an
 
   return {
     async getConfig(): Promise<DeepReadonly<InferConfigType<TBundle>>> {
-      if (!instance) {
-        instance = await createSettings(bundle, options.resolvers, { nestingSeparator: separator });
-      }
-      return instance!;
+      const current =
+        instance ??
+        (await createSettings(bundle, options.resolvers, { nestingSeparator: separator }));
+      instance = current;
+      return current;
     },
     resetConfig(): void {
       instance = null;
@@ -355,7 +358,7 @@ export function defineConfig<TBundle extends SchemaWithComputed<TObject, any, an
  * console.log(config.database.url);
  * ```
  */
-export function defineConfigSync<TBundle extends SchemaWithComputed<TObject, any, any>>(
+export function defineConfigSync<TBundle extends SchemaWithComputed>(
   bundle: TBundle,
   options: DefineConfigOptions<SyncSettingsResolver>
 ): {
@@ -367,10 +370,10 @@ export function defineConfigSync<TBundle extends SchemaWithComputed<TObject, any
 
   return {
     getConfig(): DeepReadonly<InferConfigType<TBundle>> {
-      if (!instance) {
-        instance = createSyncSettings(bundle, options.resolvers, { nestingSeparator: separator });
-      }
-      return instance!;
+      const current =
+        instance ?? createSyncSettings(bundle, options.resolvers, { nestingSeparator: separator });
+      instance = current;
+      return current;
     },
     resetConfig(): void {
       instance = null;

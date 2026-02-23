@@ -106,8 +106,8 @@ function resolveFromEnvironment(
  * ```
  */
 export function fromEnvironment(options?: EnvironmentResolverOptions): SettingsResolver {
-  return async (schema: TSchema, context?: ResolverContext) =>
-    resolveFromEnvironment(schema, options, context);
+  return (schema: TSchema, context?: ResolverContext) =>
+    Promise.resolve(resolveFromEnvironment(schema, options, context));
 }
 
 /**

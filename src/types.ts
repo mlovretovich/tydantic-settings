@@ -27,7 +27,7 @@ export type ComputedProperties<T = any> = Record<string, ComputedPropertyFunctio
  */
 export interface SchemaWithComputed<
   TSchemaType extends TObject = TObject,
-  TComputed extends ComputedProperties<any> = ComputedProperties<any>,
+  TComputed extends ComputedProperties = ComputedProperties,
   TInferredType = any,
 > {
   schema: TSchemaType;
@@ -78,9 +78,14 @@ export type InferPropertiesType<T extends Record<string, TSchema | SchemaWithCom
  * // { host: string; url: string }
  * ```
  */
-export type InferConfigType<T extends SchemaWithComputed<any, any, any>> =
-  (T extends SchemaWithComputed<any, any, infer I> ? I : Static<T['schema']>) &
-    InferComputedTypes<T['computed']>;
+export type InferConfigType<T extends SchemaWithComputed<any, any>> = (T extends SchemaWithComputed<
+  any,
+  any,
+  infer I
+>
+  ? I
+  : Static<T['schema']>) &
+  InferComputedTypes<T['computed']>;
 
 // ============================================================================
 // Resolver Types
