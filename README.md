@@ -736,5 +736,4 @@ MIT
 ## Support
 
 - 📖 [Documentation](examples/)
-- 🐛 [Issue Tracker](https://github.com/yourusername/tydantic-settings/issues)
-- 💬 [Discussions](https://github.com/yourusername/tydantic-settings/discussions)
+- 🐛 [Issue Tracker](https://github.com/mlovretovich/tydantic-settings/issues)
