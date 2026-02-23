@@ -3,10 +3,10 @@ import {
   createSettings,
   createSyncSettings,
   Settings,
-  isSchemaWithComputed,
   defineConfig,
-  defineConfigSync
+  defineConfigSync,
 } from './settings';
+import { isSchemaWithComputed } from './core/nested-bundles';
 import { SyncSettingsResolver } from './types';
 import { fromEnvironment, fromEnvironmentSync } from './resolvers';
 import { Type } from '@sinclair/typebox';
@@ -20,45 +20,43 @@ describe('createSettings', () => {
     env: Settings.Enum({ Dev: 'dev', Prod: 'prod' }, { default: 'dev' }),
     database: Settings({
       host: Settings.String(),
-      port: Settings.Number({ default: 5432 })
+      port: Settings.Number({ default: 5432 }),
     }),
-    apiKey: Settings.Optional(Settings.String())
+    apiKey: Settings.Optional(Settings.String()),
   });
 
   it('should merge settings from multiple resolvers with correct priority', async () => {
     const highPriorityResolver = vi.fn().mockResolvedValue({
       DATABASE__HOST: 'prod.db',
-      API_KEY: 'from-high-priority'
+      API_KEY: 'from-high-priority',
     });
     const lowPriorityResolver = vi.fn().mockResolvedValue({
       DATABASE__HOST: 'dev.db',
-      DATABASE__PORT: '1234'
+      DATABASE__PORT: '1234',
     });
 
-    const settings = await createSettings(
-      Schema,
-      [highPriorityResolver, lowPriorityResolver],
-      { nestingSeparator: '__' }
-    );
+    const settings = await createSettings(Schema, [highPriorityResolver, lowPriorityResolver], {
+      nestingSeparator: '__',
+    });
 
     expect(settings).toEqual({
       env: 'dev', // from default
       database: {
         host: 'prod.db', // from high priority
-        port: 1234 // from low priority, coerced to number
+        port: 1234, // from low priority, coerced to number
       },
-      apiKey: 'from-high-priority' // from high priority
+      apiKey: 'from-high-priority', // from high priority
     });
   });
 
   it('should correctly coerce types', async () => {
     const resolver = vi.fn().mockResolvedValue({
       DATABASE__HOST: 'localhost',
-      DATABASE__PORT: '8888' // string to be coerced to number
+      DATABASE__PORT: '8888', // string to be coerced to number
     });
 
     const settings = await createSettings(Schema, [resolver], {
-      nestingSeparator: '__'
+      nestingSeparator: '__',
     });
 
     expect(typeof settings.database.port).toBe('number');
@@ -67,22 +65,22 @@ describe('createSettings', () => {
 
   it('should throw an error for missing required fields', async () => {
     const resolver = vi.fn().mockResolvedValue({
-      DATABASE__PORT: '1234'
+      DATABASE__PORT: '1234',
     });
 
-    await expect(
-      createSettings(Schema, [resolver], { nestingSeparator: '__' })
-    ).rejects.toThrow(/database.host/);
+    await expect(createSettings(Schema, [resolver], { nestingSeparator: '__' })).rejects.toThrow(
+      /database.host/
+    );
   });
 
   it('should handle case-insensitivity and different separators', async () => {
     const resolver = vi.fn().mockResolvedValue({
       'database-host': 'localhost',
-      'DATABASE-PORT': '9999'
+      'DATABASE-PORT': '9999',
     });
 
     const settings = await createSettings(Schema, [resolver], {
-      nestingSeparator: '-'
+      nestingSeparator: '-',
     });
 
     expect(settings.database.host).toBe('localhost');
@@ -91,11 +89,11 @@ describe('createSettings', () => {
 
   it('should use default values when no value is provided', async () => {
     const resolver = vi.fn().mockResolvedValue({
-      DATABASE__HOST: 'localhost'
+      DATABASE__HOST: 'localhost',
     });
 
     const settings = await createSettings(Schema, [resolver], {
-      nestingSeparator: '__'
+      nestingSeparator: '__',
     });
 
     expect(settings.env).toBe('dev');
@@ -107,7 +105,7 @@ describe('createSettings', () => {
 
     const AllOptionalSchema = Settings({
       env: Settings.Enum({ Dev: 'dev' }, { default: 'dev' }),
-      port: Settings.Optional(Settings.Number())
+      port: Settings.Optional(Settings.Number()),
     });
     const settings = await createSettings(AllOptionalSchema, []);
     expect(settings).toEqual({ env: 'dev' });
@@ -116,41 +114,39 @@ describe('createSettings', () => {
   it('should not perform coercion when disabled', async () => {
     const resolver = vi.fn().mockResolvedValue({
       DATABASE__HOST: 'localhost',
-      DATABASE__PORT: '8888'
+      DATABASE__PORT: '8888',
     });
 
     await expect(
       createSettings(Schema, [resolver], {
         nestingSeparator: '__',
-        coerce: false
+        coerce: false,
       })
     ).rejects.toThrow(/Expected number/);
   });
 
   it('should add computed properties to the config', async () => {
-    const SchemaWithComputed = Settings(
-      {
-        env: Settings.Enum({ Dev: 'dev', Prod: 'prod' }, { default: 'dev' }),
-        database: Settings(
-          {
-            host: Settings.String(),
-            port: Settings.Number({ default: 5432 })
-          },
-          {
-            url: cfg => `postgres://${cfg.host}:${cfg.port}`
-          }
-        ),
-        apiKey: Settings.Optional(Settings.String())
-      }
-    );
+    const SchemaWithComputed = Settings({
+      env: Settings.Enum({ Dev: 'dev', Prod: 'prod' }, { default: 'dev' }),
+      database: Settings(
+        {
+          host: Settings.String(),
+          port: Settings.Number({ default: 5432 }),
+        },
+        {
+          url: (cfg: any) => `postgres://${cfg.host}:${cfg.port}`,
+        }
+      ),
+      apiKey: Settings.Optional(Settings.String()),
+    });
 
     const resolver = vi.fn().mockResolvedValue({
       DATABASE__HOST: 'localhost',
-      DATABASE__PORT: '5432'
+      DATABASE__PORT: '5432',
     });
 
     const settings = await createSettings(SchemaWithComputed, [resolver], {
-      nestingSeparator: '__'
+      nestingSeparator: '__',
     });
 
     expect((settings.database as any).url).toBe('postgres://localhost:5432');
@@ -159,31 +155,35 @@ describe('createSettings', () => {
   it('should return a deeply frozen config object', async () => {
     const resolver = vi.fn().mockResolvedValue({
       DATABASE__HOST: 'localhost',
-      DATABASE__PORT: '5432'
+      DATABASE__PORT: '5432',
     });
 
     const settings = await createSettings(Schema, [resolver], {
-      nestingSeparator: '__'
+      nestingSeparator: '__',
     });
 
     expect(Object.isFrozen(settings)).toBe(true);
     expect(Object.isFrozen(settings.database)).toBe(true);
-    expect(() => { (settings as any).env = 'prod'; }).toThrow(TypeError);
-    expect(() => { (settings as any).database.port = 9999; }).toThrow(TypeError);
+    expect(() => {
+      (settings as any).env = 'prod';
+    }).toThrow(TypeError);
+    expect(() => {
+      (settings as any).database.port = 9999;
+    }).toThrow(TypeError);
   });
 
   it('should throw error when computed property parent does not exist', async () => {
     const resolver = vi.fn().mockResolvedValue({
       DATABASE__HOST: 'localhost',
-      DATABASE__PORT: '5432'
+      DATABASE__PORT: '5432',
     });
 
     await expect(
       createSettings(Schema.schema, [resolver], {
         nestingSeparator: '__',
         computed: {
-          'nonexistent.property': () => 'value'
-        }
+          'nonexistent.property': () => 'value',
+        },
       })
     ).rejects.toThrow(/Cannot add computed property.*parent object.*does not exist/);
   });
@@ -198,45 +198,43 @@ describe('createSyncSettings', () => {
     env: Settings.Enum({ Dev: 'dev', Prod: 'prod' }, { default: 'dev' }),
     database: Settings({
       host: Settings.String(),
-      port: Settings.Number({ default: 5432 })
+      port: Settings.Number({ default: 5432 }),
     }),
-    apiKey: Settings.Optional(Settings.String())
+    apiKey: Settings.Optional(Settings.String()),
   });
 
   it('should merge settings from multiple resolvers with correct priority', () => {
     const highPriorityResolver: SyncSettingsResolver = vi.fn().mockReturnValue({
       DATABASE__HOST: 'prod.db',
-      API_KEY: 'from-high-priority'
+      API_KEY: 'from-high-priority',
     });
     const lowPriorityResolver: SyncSettingsResolver = vi.fn().mockReturnValue({
       DATABASE__HOST: 'dev.db',
-      DATABASE__PORT: '1234'
+      DATABASE__PORT: '1234',
     });
 
-    const settings = createSyncSettings(
-      Schema,
-      [highPriorityResolver, lowPriorityResolver],
-      { nestingSeparator: '__' }
-    );
+    const settings = createSyncSettings(Schema, [highPriorityResolver, lowPriorityResolver], {
+      nestingSeparator: '__',
+    });
 
     expect(settings).toEqual({
       env: 'dev',
       database: {
         host: 'prod.db',
-        port: 1234
+        port: 1234,
       },
-      apiKey: 'from-high-priority'
+      apiKey: 'from-high-priority',
     });
   });
 
   it('should correctly coerce types', () => {
     const resolver: SyncSettingsResolver = vi.fn().mockReturnValue({
       DATABASE__HOST: 'localhost',
-      DATABASE__PORT: '8888'
+      DATABASE__PORT: '8888',
     });
 
     const settings = createSyncSettings(Schema, [resolver], {
-      nestingSeparator: '__'
+      nestingSeparator: '__',
     });
 
     expect(typeof settings.database.port).toBe('number');
@@ -245,38 +243,36 @@ describe('createSyncSettings', () => {
 
   it('should throw an error for missing required fields', () => {
     const resolver: SyncSettingsResolver = vi.fn().mockReturnValue({
-      DATABASE__PORT: '1234'
+      DATABASE__PORT: '1234',
     });
 
-    expect(() =>
-      createSyncSettings(Schema, [resolver], { nestingSeparator: '__' })
-    ).toThrow(/database.host/);
+    expect(() => createSyncSettings(Schema, [resolver], { nestingSeparator: '__' })).toThrow(
+      /database.host/
+    );
   });
 
   it('should add computed properties to the config', () => {
-    const SchemaWithComputed = Settings(
-      {
-        env: Settings.Enum({ Dev: 'dev', Prod: 'prod' }, { default: 'dev' }),
-        database: Settings(
-          {
-            host: Settings.String(),
-            port: Settings.Number({ default: 5432 })
-          },
-          {
-            url: cfg => `postgres://${cfg.host}:${cfg.port}`
-          }
-        ),
-        apiKey: Settings.Optional(Settings.String())
-      }
-    );
+    const SchemaWithComputed = Settings({
+      env: Settings.Enum({ Dev: 'dev', Prod: 'prod' }, { default: 'dev' }),
+      database: Settings(
+        {
+          host: Settings.String(),
+          port: Settings.Number({ default: 5432 }),
+        },
+        {
+          url: (cfg: any) => `postgres://${cfg.host}:${cfg.port}`,
+        }
+      ),
+      apiKey: Settings.Optional(Settings.String()),
+    });
 
     const resolver: SyncSettingsResolver = vi.fn().mockReturnValue({
       DATABASE__HOST: 'localhost',
-      DATABASE__PORT: '5432'
+      DATABASE__PORT: '5432',
     });
 
     const settings = createSyncSettings(SchemaWithComputed, [resolver], {
-      nestingSeparator: '__'
+      nestingSeparator: '__',
     });
 
     expect((settings.database as any).url).toBe('postgres://localhost:5432');
@@ -318,7 +314,7 @@ describe('Settings', () => {
     it('should create a SchemaWithComputed bundle with empty computed', () => {
       const bundle = Settings({
         host: Settings.String({ default: 'localhost' }),
-        port: Settings.Number({ default: 3000 })
+        port: Settings.Number({ default: 3000 }),
       });
 
       expect(isSchemaWithComputed(bundle)).toBe(true);
@@ -331,7 +327,7 @@ describe('Settings', () => {
     it('should work with createSyncSettings', () => {
       const bundle = Settings({
         host: Settings.String({ default: 'localhost' }),
-        port: Settings.Number({ default: 3000 })
+        port: Settings.Number({ default: 3000 }),
       });
 
       const config = createSyncSettings(bundle.schema, []);
@@ -346,10 +342,10 @@ describe('Settings', () => {
       const bundle = Settings(
         {
           host: Settings.String({ default: 'localhost' }),
-          port: Settings.Number({ default: 3000 })
+          port: Settings.Number({ default: 3000 }),
         },
         {
-          url: cfg => `http://${cfg.host}:${cfg.port}`
+          url: cfg => `http://${cfg.host}:${cfg.port}`,
         }
       );
 
@@ -361,15 +357,15 @@ describe('Settings', () => {
       const bundle = Settings(
         {
           host: Settings.String({ default: 'localhost' }),
-          port: Settings.Number({ default: 3000 })
+          port: Settings.Number({ default: 3000 }),
         },
         {
-          url: cfg => `http://${cfg.host}:${cfg.port}`
+          url: cfg => `http://${cfg.host}:${cfg.port}`,
         }
       );
 
       const config = createSyncSettings(bundle.schema, [], {
-        computed: bundle.computed
+        computed: bundle.computed,
       });
 
       expect(config.host).toBe('localhost');
@@ -382,20 +378,20 @@ describe('Settings', () => {
       const DatabaseConfig = Settings(
         {
           host: Settings.String({ default: 'localhost' }),
-          port: Settings.Number({ default: 5432 })
+          port: Settings.Number({ default: 5432 }),
         },
         {
-          url: cfg => `postgresql://${cfg.host}:${cfg.port}`
+          url: cfg => `postgresql://${cfg.host}:${cfg.port}`,
         }
       );
 
       const AppConfig = Settings(
         {
           environment: Settings.String({ default: 'development' }),
-          database: DatabaseConfig
+          database: DatabaseConfig,
         },
         {
-          isDev: cfg => cfg.environment === 'development'
+          isDev: cfg => cfg.environment === 'development',
         }
       );
 
@@ -408,25 +404,25 @@ describe('Settings', () => {
       const DatabaseConfig = Settings(
         {
           host: Settings.String({ default: 'localhost' }),
-          port: Settings.Number({ default: 5432 })
+          port: Settings.Number({ default: 5432 }),
         },
         {
-          url: cfg => `postgresql://${cfg.host}:${cfg.port}`
+          url: cfg => `postgresql://${cfg.host}:${cfg.port}`,
         }
       );
 
       const AppConfig = Settings(
         {
           environment: Settings.String({ default: 'development' }),
-          database: DatabaseConfig
+          database: DatabaseConfig,
         },
         {
-          isDev: cfg => cfg.environment === 'development'
+          isDev: cfg => cfg.environment === 'development',
         }
       );
 
       const config = createSyncSettings(AppConfig.schema, [], {
-        computed: AppConfig.computed
+        computed: AppConfig.computed,
       });
 
       expect((config as any).isDev).toBe(true);
@@ -442,7 +438,7 @@ describe('Settings', () => {
       const MiddleConfig = Settings(
         {
           name: Settings.String({ default: 'middle' }),
-          inner: InnerConfig
+          inner: InnerConfig,
         },
         { fullName: cfg => `${cfg.name}/${cfg.inner.value}` }
       );
@@ -450,21 +446,21 @@ describe('Settings', () => {
       const OuterConfig = Settings(
         {
           id: Settings.String({ default: 'outer' }),
-          middle: MiddleConfig
+          middle: MiddleConfig,
         },
         { summary: cfg => `${cfg.id}:${cfg.middle.name}` }
       );
 
-      const config = createSyncSettings(OuterConfig.schema, [], {
-        computed: OuterConfig.computed
+      const config: any = createSyncSettings(OuterConfig.schema, [], {
+        computed: OuterConfig.computed,
       });
 
       expect(config.id).toBe('outer');
       expect(config.middle.name).toBe('middle');
       expect(config.middle.inner.value).toBe('inner');
-      expect((config as any).summary).toBe('outer:middle');
-      expect((config.middle as any).fullName).toBe('middle/inner');
-      expect((config.middle.inner as any).computed).toBe('computed:inner');
+      expect(config.summary).toBe('outer:middle');
+      expect(config.middle.fullName).toBe('middle/inner');
+      expect(config.middle.inner.computed).toBe('computed:inner');
     });
   });
 
@@ -523,23 +519,23 @@ describe('defineConfig', () => {
 
   const TestConfig = Settings({
     host: Settings.String({ default: 'localhost' }),
-    port: Settings.Number({ default: 3000 })
+    port: Settings.Number({ default: 3000 }),
   });
 
   const TestConfigWithComputed = Settings(
     {
       host: Settings.String({ default: 'localhost' }),
-      port: Settings.Number({ default: 3000 })
+      port: Settings.Number({ default: 3000 }),
     },
     {
-      url: cfg => `http://${cfg.host}:${cfg.port}`
+      url: cfg => `http://${cfg.host}:${cfg.port}`,
     }
   );
 
   it('should return getConfig and resetConfig functions', () => {
     const { getConfig, resetConfig } = defineConfig(TestConfig, {
       nestingSeparator: '__',
-      resolvers: [fromEnvironment()]
+      resolvers: [fromEnvironment()],
     });
 
     expect(typeof getConfig).toBe('function');
@@ -549,7 +545,7 @@ describe('defineConfig', () => {
   it('should cache config after first call (singleton)', async () => {
     const { getConfig } = defineConfig(TestConfig, {
       nestingSeparator: '__',
-      resolvers: [fromEnvironment()]
+      resolvers: [fromEnvironment()],
     });
 
     const config1 = await getConfig();
@@ -561,7 +557,7 @@ describe('defineConfig', () => {
   it('should clear cache when resetConfig is called', async () => {
     const { getConfig, resetConfig } = defineConfig(TestConfig, {
       nestingSeparator: '__',
-      resolvers: [fromEnvironment()]
+      resolvers: [fromEnvironment()],
     });
 
     const config1 = await getConfig();
@@ -577,7 +573,7 @@ describe('defineConfig', () => {
 
     const { getConfig } = defineConfig(TestConfig, {
       nestingSeparator: '__',
-      resolvers: [fromEnvironment()]
+      resolvers: [fromEnvironment()],
     });
     const config = await getConfig();
 
@@ -588,7 +584,7 @@ describe('defineConfig', () => {
   it('should extract schema and computed from bundle automatically', async () => {
     const { getConfig } = defineConfig(TestConfigWithComputed, {
       nestingSeparator: '__',
-      resolvers: [fromEnvironment()]
+      resolvers: [fromEnvironment()],
     });
 
     const config = await getConfig();
@@ -599,12 +595,12 @@ describe('defineConfig', () => {
   it('should use custom resolvers passed via options.resolvers', async () => {
     const customResolver = vi.fn().mockResolvedValue({
       HOST: 'custom-host',
-      PORT: '9999'
+      PORT: '9999',
     });
 
     const { getConfig } = defineConfig(TestConfig, {
       nestingSeparator: '__',
-      resolvers: [customResolver]
+      resolvers: [customResolver],
     });
 
     const config = await getConfig();
@@ -619,13 +615,13 @@ describe('defineConfig', () => {
 
     const NestedConfig = Settings({
       database: Settings({
-        host: Settings.String({ default: 'localhost' })
-      })
+        host: Settings.String({ default: 'localhost' }),
+      }),
     });
 
     const { getConfig } = defineConfig(NestedConfig, {
       nestingSeparator: '__',
-      resolvers: [fromEnvironment({ nestingSeparator: '__' })]
+      resolvers: [fromEnvironment({ nestingSeparator: '__' })],
     });
     const config = await getConfig();
 
@@ -637,14 +633,14 @@ describe('defineConfig', () => {
 
     const NestedConfig = Settings({
       database: Settings({
-        port: Settings.Number({ default: 3306 })
-      })
+        port: Settings.Number({ default: 3306 }),
+      }),
     });
 
     // Resolver doesn't specify separator - should inherit from defineConfig
     const { getConfig } = defineConfig(NestedConfig, {
       nestingSeparator: '__',
-      resolvers: [fromEnvironment()] // No separator specified here!
+      resolvers: [fromEnvironment()], // No separator specified here!
     });
     const config = await getConfig();
 
@@ -659,14 +655,14 @@ describe('defineConfig', () => {
 
     const NestedConfig = Settings({
       database: Settings({
-        host: Settings.String({ default: 'localhost' })
-      })
+        host: Settings.String({ default: 'localhost' }),
+      }),
     });
 
     // Resolver explicitly specifies different separator - overrides the defineConfig separator
     const { getConfig } = defineConfig(NestedConfig, {
       nestingSeparator: '--', // Use -- for unflattening
-      resolvers: [fromEnvironment({ nestingSeparator: '--' })] // Use -- for env var lookup
+      resolvers: [fromEnvironment({ nestingSeparator: '--' })], // Use -- for env var lookup
     });
     const config = await getConfig();
 
@@ -691,23 +687,23 @@ describe('defineConfigSync', () => {
 
   const TestConfig = Settings({
     host: Settings.String({ default: 'localhost' }),
-    port: Settings.Number({ default: 3000 })
+    port: Settings.Number({ default: 3000 }),
   });
 
   const TestConfigWithComputed = Settings(
     {
       host: Settings.String({ default: 'localhost' }),
-      port: Settings.Number({ default: 3000 })
+      port: Settings.Number({ default: 3000 }),
     },
     {
-      url: cfg => `http://${cfg.host}:${cfg.port}`
+      url: cfg => `http://${cfg.host}:${cfg.port}`,
     }
   );
 
   it('should return sync getConfig function', () => {
     const { getConfig } = defineConfigSync(TestConfig, {
       nestingSeparator: '__',
-      resolvers: [fromEnvironmentSync()]
+      resolvers: [fromEnvironmentSync()],
     });
 
     const config = getConfig(); // No await needed
@@ -718,7 +714,7 @@ describe('defineConfigSync', () => {
   it('should cache config after first call (singleton)', () => {
     const { getConfig } = defineConfigSync(TestConfig, {
       nestingSeparator: '__',
-      resolvers: [fromEnvironmentSync()]
+      resolvers: [fromEnvironmentSync()],
     });
 
     const config1 = getConfig();
@@ -730,7 +726,7 @@ describe('defineConfigSync', () => {
   it('should clear cache when resetConfig is called', () => {
     const { getConfig, resetConfig } = defineConfigSync(TestConfig, {
       nestingSeparator: '__',
-      resolvers: [fromEnvironmentSync()]
+      resolvers: [fromEnvironmentSync()],
     });
 
     const config1 = getConfig();
@@ -746,7 +742,7 @@ describe('defineConfigSync', () => {
 
     const { getConfig } = defineConfigSync(TestConfig, {
       nestingSeparator: '__',
-      resolvers: [fromEnvironmentSync()]
+      resolvers: [fromEnvironmentSync()],
     });
     const config = getConfig();
 
@@ -757,7 +753,7 @@ describe('defineConfigSync', () => {
   it('should extract schema and computed from bundle automatically', () => {
     const { getConfig } = defineConfigSync(TestConfigWithComputed, {
       nestingSeparator: '__',
-      resolvers: [fromEnvironmentSync()]
+      resolvers: [fromEnvironmentSync()],
     });
 
     const config = getConfig();
@@ -768,12 +764,12 @@ describe('defineConfigSync', () => {
   it('should use custom sync resolvers passed via options.resolvers', () => {
     const customResolver: SyncSettingsResolver = vi.fn().mockReturnValue({
       HOST: 'custom-sync-host',
-      PORT: '6666'
+      PORT: '6666',
     });
 
     const { getConfig } = defineConfigSync(TestConfig, {
       nestingSeparator: '__',
-      resolvers: [customResolver]
+      resolvers: [customResolver],
     });
 
     const config = getConfig();
@@ -792,10 +788,10 @@ describe('createSettings with bundle', () => {
   const ConfigBundle = Settings(
     {
       host: Settings.String({ default: 'localhost' }),
-      port: Settings.Number({ default: 5432 })
+      port: Settings.Number({ default: 5432 }),
     },
     {
-      url: cfg => `postgresql://${cfg.host}:${cfg.port}`
+      url: cfg => `postgresql://${cfg.host}:${cfg.port}`,
     }
   );
 
@@ -803,7 +799,7 @@ describe('createSettings with bundle', () => {
     const resolver = vi.fn().mockResolvedValue({});
 
     const config = await createSettings(ConfigBundle, [resolver], {
-      nestingSeparator: '__'
+      nestingSeparator: '__',
     });
 
     expect(config.host).toBe('localhost');
@@ -814,7 +810,7 @@ describe('createSettings with bundle', () => {
     const resolver = vi.fn().mockResolvedValue({});
 
     const config = await createSettings(ConfigBundle, [resolver], {
-      nestingSeparator: '__'
+      nestingSeparator: '__',
     });
 
     // Computed property should be available without passing options.computed
@@ -825,27 +821,27 @@ describe('createSettings with bundle', () => {
     const DatabaseConfig = Settings(
       {
         host: Settings.String({ default: 'db-host' }),
-        port: Settings.Number({ default: 5432 })
+        port: Settings.Number({ default: 5432 }),
       },
       {
-        connectionString: cfg => `postgres://${cfg.host}:${cfg.port}`
+        connectionString: cfg => `postgres://${cfg.host}:${cfg.port}`,
       }
     );
 
     const AppBundle = Settings(
       {
         environment: Settings.String({ default: 'development' }),
-        database: DatabaseConfig
+        database: DatabaseConfig,
       },
       {
-        isDev: cfg => cfg.environment === 'development'
+        isDev: cfg => cfg.environment === 'development',
       }
     );
 
     const resolver = vi.fn().mockResolvedValue({});
 
     const config = await createSettings(AppBundle, [resolver], {
-      nestingSeparator: '__'
+      nestingSeparator: '__',
     });
 
     expect(config.environment).toBe('development');
@@ -859,10 +855,10 @@ describe('createSyncSettings with bundle', () => {
   const ConfigBundle = Settings(
     {
       host: Settings.String({ default: 'localhost' }),
-      port: Settings.Number({ default: 5432 })
+      port: Settings.Number({ default: 5432 }),
     },
     {
-      url: cfg => `postgresql://${cfg.host}:${cfg.port}`
+      url: cfg => `postgresql://${cfg.host}:${cfg.port}`,
     }
   );
 
@@ -870,7 +866,7 @@ describe('createSyncSettings with bundle', () => {
     const resolver: SyncSettingsResolver = vi.fn().mockReturnValue({});
 
     const config = createSyncSettings(ConfigBundle, [resolver], {
-      nestingSeparator: '__'
+      nestingSeparator: '__',
     });
 
     expect(config.host).toBe('localhost');
@@ -881,7 +877,7 @@ describe('createSyncSettings with bundle', () => {
     const resolver: SyncSettingsResolver = vi.fn().mockReturnValue({});
 
     const config = createSyncSettings(ConfigBundle, [resolver], {
-      nestingSeparator: '__'
+      nestingSeparator: '__',
     });
 
     expect((config as any).url).toBe('postgresql://localhost:5432');

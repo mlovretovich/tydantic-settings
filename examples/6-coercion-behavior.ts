@@ -1,5 +1,4 @@
-import { Settings, createSettings } from '../src/settings';
-import { fromEnvironment } from '../src/resolvers';
+import { Settings, createSettings, fromEnvironment, type SettingsResolver } from '../src';
 
 /**
  * Coercion Behavior Example
@@ -84,7 +83,7 @@ delete process.env.FEATURES__RATE_LIMIT;
 delete process.env.FEATURES__DEBUG;
 
 // Custom resolver that provides correctly typed values
-const fromTypedObject = (data: any) => async () => data;
+const fromTypedObject = (data: any): SettingsResolver => async () => data;
 
 try {
   const configStrictMode = await createSettings(

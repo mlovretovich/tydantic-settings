@@ -1,4 +1,4 @@
-import { Static, TObject, TProperties, TSchema } from '@sinclair/typebox';
+import { Static, TObject, TSchema } from '@sinclair/typebox';
 
 // ============================================================================
 // Computed Properties Types
@@ -27,8 +27,8 @@ export type ComputedProperties<T = any> = Record<string, ComputedPropertyFunctio
  */
 export interface SchemaWithComputed<
   TSchemaType extends TObject = TObject,
-  TComputed extends ComputedProperties<any> = ComputedProperties<any>,
-  TInferredType = any
+  TComputed extends ComputedProperties = ComputedProperties,
+  TInferredType = any,
 > {
   schema: TSchemaType;
   computed: TComputed;
@@ -48,11 +48,12 @@ export type InferComputedTypes<TComputed extends Record<string, (config: any) =>
  * For bundles, this includes both the schema type AND computed properties.
  * For bundles with a TInferredType hint, uses that for proper nested type inference.
  */
-export type ExtractStaticType<T> = T extends SchemaWithComputed<infer S, infer C, infer I>
-  ? (I extends Static<S> ? I : Static<S>) & InferComputedTypes<C>
-  : T extends TSchema
-  ? Static<T>
-  : never;
+export type ExtractStaticType<T> =
+  T extends SchemaWithComputed<infer S, infer C, infer I>
+    ? (I extends Static<S> ? I : Static<S>) & InferComputedTypes<C>
+    : T extends TSchema
+      ? Static<T>
+      : never;
 
 /**
  * Maps a record of properties to their static type equivalents.
@@ -77,9 +78,14 @@ export type InferPropertiesType<T extends Record<string, TSchema | SchemaWithCom
  * // { host: string; url: string }
  * ```
  */
-export type InferConfigType<T extends SchemaWithComputed<any, any, any>> =
-  (T extends SchemaWithComputed<any, any, infer I> ? I : Static<T['schema']>) &
-    InferComputedTypes<T['computed']>;
+export type InferConfigType<T extends SchemaWithComputed<any, any>> = (T extends SchemaWithComputed<
+  any,
+  any,
+  infer I
+>
+  ? I
+  : Static<T['schema']>) &
+  InferComputedTypes<T['computed']>;
 
 // ============================================================================
 // Resolver Types
@@ -129,8 +135,8 @@ export type SyncSettingsResolver = (
 export type DeepReadonly<T> = T extends (infer R)[]
   ? ReadonlyArray<DeepReadonly<R>>
   : T extends object
-  ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
-  : T;
+    ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+    : T;
 
 // ============================================================================
 // Re-export Static for convenience

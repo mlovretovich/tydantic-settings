@@ -1,5 +1,4 @@
-import { Settings, createSettings } from '../src/settings';
-import { fromEnvironment, fromDotenv } from '../src/resolvers';
+import { Settings, createSettings, fromEnvironment, fromDotenv } from '../src';
 
 /**
  * Basic Configuration Example

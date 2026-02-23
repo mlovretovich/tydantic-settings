@@ -1,21 +1,5 @@
 import { TObject, TSchema } from '@sinclair/typebox';
-import { ComputedProperties } from './computed';
-
-/**
- * A schema bundled with its computed properties.
- * This allows libraries to export both schema and computed properties together,
- * making it easier for applications to compose multiple library configurations.
- */
-export interface SchemaWithComputed<
-  TSchemaType extends TObject = TObject,
-  TComputed extends ComputedProperties<any> = ComputedProperties<any>,
-  TInferredType = any
-> {
-  schema: TSchemaType;
-  computed: TComputed;
-  /** Type hint for InferConfigType - reflects the actual object shape including nested bundles */
-  _inferredType?: TInferredType;
-}
+import { SchemaWithComputed } from '../types';
 
 /**
  * Checks if a value is a SchemaWithComputed bundle.
@@ -53,9 +37,10 @@ export function processNestedBundles(
       extractedProperties[key] = value.schema;
 
       // Scope each computed property to this path
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       for (const [computedKey, computedFn] of Object.entries(value.computed) as [
         string,
-        (config: any) => any
+        (config: any) => unknown,
       ][]) {
         collectedComputed[`${currentPath}.${computedKey}`] = (fullConfig: any) => {
           // Navigate to the nested object
@@ -71,7 +56,7 @@ export function processNestedBundles(
         const nested = processNestedBundles(value.schema.properties, currentPath);
         extractedProperties[key] = {
           ...value.schema,
-          properties: { ...value.schema.properties, ...nested.extractedProperties }
+          properties: { ...value.schema.properties, ...nested.extractedProperties },
         } as TObject;
         Object.assign(collectedComputed, nested.collectedComputed);
       }
@@ -86,7 +71,7 @@ export function processNestedBundles(
 
       extractedProperties[key] = {
         ...value,
-        properties: nested.extractedProperties
+        properties: nested.extractedProperties,
       } as unknown as TSchema;
 
       Object.assign(collectedComputed, nested.collectedComputed);

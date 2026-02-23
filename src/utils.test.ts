@@ -40,7 +40,9 @@ describe('utils', () => {
       const obj = { a: 1, b: 'hello' };
       deepFreeze(obj);
       expect(Object.isFrozen(obj)).toBe(true);
-      expect(() => { (obj as any).a = 2; }).toThrow(TypeError);
+      expect(() => {
+        (obj as any).a = 2;
+      }).toThrow(TypeError);
     });
 
     it('should recursively freeze nested objects', () => {
@@ -49,7 +51,9 @@ describe('utils', () => {
       expect(Object.isFrozen(obj)).toBe(true);
       expect(Object.isFrozen(obj.a)).toBe(true);
       expect(Object.isFrozen(obj.a.b)).toBe(true);
-      expect(() => { (obj as any).a.b.c = 99; }).toThrow(TypeError);
+      expect(() => {
+        (obj as any).a.b.c = 99;
+      }).toThrow(TypeError);
     });
 
     it('should skip getter properties', () => {
@@ -57,7 +61,7 @@ describe('utils', () => {
       Object.defineProperty(obj, 'computed', {
         get: () => obj.value * 2,
         enumerable: true,
-        configurable: false
+        configurable: false,
       });
       deepFreeze(obj);
       expect(Object.isFrozen(obj)).toBe(true);

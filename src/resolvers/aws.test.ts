@@ -1,7 +1,5 @@
 import { vi } from 'vitest';
 import { fromAwsSecretsManager } from './aws';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { Type } from '@sinclair/typebox';
 
 // Create a shared mock send function
@@ -15,14 +13,14 @@ vi.mock('@aws-sdk/client-secrets-manager', () => {
     },
     GetSecretValueCommand: class MockGetSecretValueCommand {
       constructor(public params: unknown) {}
-    }
+    },
   };
 });
 
 describe('fromAwsSecretsManager', () => {
   const mockSchema = Type.Object({
     API_KEY: Type.String(),
-    DB_PASS: Type.String()
+    DB_PASS: Type.String(),
   });
 
   beforeEach(() => {
@@ -40,7 +38,7 @@ describe('fromAwsSecretsManager', () => {
   it('should return parsed JSON from SecretString with case-sensitive mode', async () => {
     const secretData = { API_KEY: '12345', DB_PASS: 'secret' };
     mockSend.mockResolvedValue({
-      SecretString: JSON.stringify(secretData)
+      SecretString: JSON.stringify(secretData),
     });
 
     const resolver = fromAwsSecretsManager('my-secret-id', 'us-east-1', { caseSensitive: true });
@@ -53,7 +51,7 @@ describe('fromAwsSecretsManager', () => {
   it('should return parsed JSON from SecretString with case-insensitive matching', async () => {
     const secretData = { api_key: '12345', db_pass: 'secret' };
     mockSend.mockResolvedValue({
-      SecretString: JSON.stringify(secretData)
+      SecretString: JSON.stringify(secretData),
     });
 
     const resolver = fromAwsSecretsManager('my-secret-id', 'us-east-1');
@@ -62,7 +60,7 @@ describe('fromAwsSecretsManager', () => {
     // Case-insensitive matching should map api_key -> API_KEY, db_pass -> DB_PASS
     expect(result).toEqual({
       API_KEY: '12345',
-      DB_PASS: 'secret'
+      DB_PASS: 'secret',
     });
     expect(mockSend).toHaveBeenCalledTimes(1);
   });
@@ -88,5 +86,23 @@ describe('fromAwsSecretsManager', () => {
       expect.any(Error)
     );
     consoleWarnSpy.mockRestore();
+  });
+});
+
+describe('fromAwsSecretsManager - missing dependency', () => {
+  it('should throw a clear error when @aws-sdk/client-secrets-manager is not installed', async () => {
+    vi.doMock('@aws-sdk/client-secrets-manager', () => {
+      throw new Error("Cannot find module '@aws-sdk/client-secrets-manager'");
+    });
+
+    const { fromAwsSecretsManager: fromAwsFresh } = await import('./aws');
+    const schema = Type.Object({ API_KEY: Type.String() });
+    const resolver = fromAwsFresh('my-secret', 'us-east-1');
+
+    await expect(resolver(schema)).rejects.toThrow(
+      'The "@aws-sdk/client-secrets-manager" package is required to use fromAwsSecretsManager()'
+    );
+
+    vi.doUnmock('@aws-sdk/client-secrets-manager');
   });
 });
