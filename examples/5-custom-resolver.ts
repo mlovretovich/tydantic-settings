@@ -1,8 +1,5 @@
-import { Settings, createSettings } from '../src/settings';
-import { fromEnvironment } from '../src/resolvers';
-import { SettingsResolver } from '../src/types';
+import { Settings, createSettings, fromEnvironment, type SettingsResolver, normalizeKey } from '../src';
 import { TObject, TSchema } from '@sinclair/typebox';
-import { normalizeKey } from '../src/utils';
 
 /**
  * Custom Resolver Example

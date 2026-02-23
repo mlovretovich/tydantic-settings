@@ -7,11 +7,8 @@ import {
   InferConfigType,
   DeepReadonly,
   SettingsResolver,
-  SyncSettingsResolver
+  SyncSettingsResolver,
 } from './types';
-
-// Re-export for backward compatibility
-export { isSchemaWithComputed } from './core/nested-bundles';
 
 // ============================================================================
 // Async Settings API
@@ -62,9 +59,8 @@ export async function createSettings<T extends TSchema>(
 export async function createSettings(
   schemaOrBundle: TSchema | SchemaWithComputed,
   resolvers: SettingsResolver[],
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   options?: ProcessConfigOptions<any>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
   // Detect if first arg is a bundle
   const isBundle = isSchemaWithComputed(schemaOrBundle);
@@ -140,9 +136,8 @@ export function createSyncSettings<T extends TSchema>(
 export function createSyncSettings(
   schemaOrBundle: TSchema | SchemaWithComputed,
   resolvers: SyncSettingsResolver[],
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   options?: ProcessConfigOptions<any>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
   // Detect if first arg is a bundle
   const isBundle = isSchemaWithComputed(schemaOrBundle);
@@ -224,14 +219,14 @@ export function Settings<T extends Record<string, TSchema | SchemaWithComputed<a
 ): SchemaWithComputed<TObject, EmptyComputed, InferPropertiesType<T>>;
 export function Settings<
   T extends Record<string, TSchema | SchemaWithComputed<any, any>>,
-  TComputed extends Record<string, (config: any) => any>
+  TComputed extends Record<string, (config: any) => any>,
 >(
   properties: T,
   computed: TComputed
 ): SchemaWithComputed<TObject, TComputed, InferPropertiesType<T>>;
 export function Settings<
   T extends Record<string, TSchema | SchemaWithComputed<any, any>>,
-  TComputed extends Record<string, (config: any) => any>
+  TComputed extends Record<string, (config: any) => any>,
 >(properties: T, computed?: TComputed) {
   // Process nested bundles
   const { extractedProperties, collectedComputed } = processNestedBundles(properties);
@@ -242,12 +237,12 @@ export function Settings<
   // Merge auto-collected computed with explicitly provided computed
   const finalComputed = {
     ...collectedComputed,
-    ...(computed || {})
+    ...(computed || {}),
   } as TComputed;
 
   return {
     schema,
-    computed: finalComputed
+    computed: finalComputed,
   };
 }
 
@@ -329,7 +324,7 @@ export function defineConfig<TBundle extends SchemaWithComputed<TObject, any, an
     },
     resetConfig(): void {
       instance = null;
-    }
+    },
   };
 }
 
@@ -379,6 +374,6 @@ export function defineConfigSync<TBundle extends SchemaWithComputed<TObject, any
     },
     resetConfig(): void {
       instance = null;
-    }
+    },
   };
 }

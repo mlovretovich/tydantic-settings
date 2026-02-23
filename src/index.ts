@@ -3,11 +3,12 @@ export {
   createSettings,
   createSyncSettings,
   Settings,
-  isSchemaWithComputed,
   defineConfig,
   defineConfigSync,
-  type DefineConfigOptions
+  type DefineConfigOptions,
 } from './settings';
+
+export { isSchemaWithComputed } from './core/nested-bundles';
 
 // Resolvers
 export {
@@ -17,7 +18,7 @@ export {
   fromDotenvSync,
   fromAwsSecretsManager,
   type EnvironmentResolverOptions,
-  type DotenvResolverOptions
+  type DotenvResolverOptions,
 } from './resolvers';
 
 // Types
@@ -38,7 +39,7 @@ export {
   // Deep readonly
   type DeepReadonly,
   // Re-export Static for convenience
-  type Static
+  type Static,
 } from './types';
 
 // Utilities

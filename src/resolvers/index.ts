@@ -5,7 +5,7 @@ export type { SettingsResolver, SyncSettingsResolver } from '../types';
 export {
   fromEnvironment,
   fromEnvironmentSync,
-  type EnvironmentResolverOptions
+  type EnvironmentResolverOptions,
 } from './environment';
 
 // Dotenv resolvers (sync + async)

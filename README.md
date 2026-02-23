@@ -31,24 +31,28 @@ Define your configuration schema once and resolve values from multiple sources (
   - [Immutable Configuration](#immutable-configuration)
   - [Type Coercion](#type-coercion)
   - [Custom Resolvers](#custom-resolvers)
-- [Examples](#examples)
 - [API Reference](#api-reference)
 - [TypeScript Support](#typescript-support)
-- [Comparison with Pydantic Settings](#comparison-with-pydantic-settings)
 - [Error Handling](#error-handling)
 - [Best Practices](#best-practices)
+- [Examples](#examples)
+- [Comparison with Pydantic Settings](#comparison-with-pydantic-settings)
 
 ## Installation
 
 ```bash
-npm install tydantic-settings @sinclair/typebox dotenv
+npm install tydantic-settings
 ```
 
-For AWS Secrets Manager support:
+### Optional: AWS Secrets Manager
+
+To use the `fromAwsSecretsManager()` resolver, install the AWS SDK:
 
 ```bash
 npm install @aws-sdk/client-secrets-manager
 ```
+
+This dependency is optional — if you only use `fromEnvironment()` or `fromDotenv()`, you don't need it.
 
 ## Quick Start
 
@@ -266,6 +270,8 @@ fromDotenv({
 
 **`fromAwsSecretsManager(secretId, region, options?)`**
 
+> Requires `@aws-sdk/client-secrets-manager` — see [Installation](#optional-aws-secrets-manager).
+
 Fetches secrets from AWS Secrets Manager:
 
 ```typescript
@@ -459,20 +465,7 @@ const settings = await createSettings(Schema, [
 ]);
 ```
 
-See [examples/5-custom-resolver.ts](examples/5-custom-resolver.ts) for complete examples.
-
-## Examples
-
-The [examples/](examples/) directory contains comprehensive examples:
-
-1. **[1-basic-config.ts](examples/1-basic-config.ts)** - Simple configuration with defaults
-2. **[2-multi-environment.ts](examples/2-multi-environment.ts)** - Dev/staging/prod environments
-3. **[3-aws-secrets.ts](examples/3-aws-secrets.ts)** - AWS Secrets Manager integration
-4. **[4-complex-nested.ts](examples/4-complex-nested.ts)** - Deeply nested configuration
-5. **[5-custom-resolver.ts](examples/5-custom-resolver.ts)** - Custom resolvers (JSON, Consul, API)
-6. **[6-coercion-behavior.ts](examples/6-coercion-behavior.ts)** - Type coercion examples
-7. **[7-computed-properties.ts](examples/7-computed-properties.ts)** - Computed/derived fields
-8. **[8-config-with-computed.ts](examples/8-config-with-computed.ts)** - Real-world example
+See the [examples/](examples/) directory for a complete custom resolver implementation.
 
 ## API Reference
 
@@ -684,19 +677,6 @@ const settings = await getConfig();
 // settings is fully typed as AppConfigType
 ```
 
-## Comparison with Pydantic Settings
-
-If you're familiar with Python's Pydantic Settings:
-
-| Pydantic Settings            | Tydantic Settings                         |
-| ---------------------------- | ----------------------------------------- |
-| `BaseSettings`               | `Settings()`                              |
-| `Field(default=...)`         | `Settings.String({ default: ... })`       |
-| `@computed_field`            | `computed: { 'field': (cfg) => ... }`     |
-| `model_config['env_prefix']` | `nestingSeparator` option                 |
-| `.env` file support          | `fromDotenv()` resolver                   |
-| Custom sources               | Custom resolvers                          |
-
 ## Error Handling
 
 Tydantic Settings provides clear error messages for configuration issues:
@@ -723,6 +703,23 @@ Tydantic Settings provides clear error messages for configuration issues:
 4. **Use computed properties for derived data** - Connection URLs, environment flags, etc.
 5. **Validate early** - Call `getConfig()` at application startup
 6. **Export typed settings** - Use `InferConfigType<typeof AppConfig>` for type inference
+
+## Examples
+
+The [examples/](examples/) directory contains runnable examples covering basic configuration, multi-environment setups, AWS Secrets Manager, custom resolvers, computed properties, and more. See the [examples README](examples/README.md) for a full listing.
+
+## Comparison with Pydantic Settings
+
+If you're familiar with Python's Pydantic Settings:
+
+| Pydantic Settings            | Tydantic Settings                         |
+| ---------------------------- | ----------------------------------------- |
+| `BaseSettings`               | `Settings()`                              |
+| `Field(default=...)`         | `Settings.String({ default: ... })`       |
+| `@computed_field`            | `computed: { 'field': (cfg) => ... }`     |
+| `model_config['env_prefix']` | `nestingSeparator` option                 |
+| `.env` file support          | `fromDotenv()` resolver                   |
+| Custom sources               | Custom resolvers                          |
 
 ## Contributing
 

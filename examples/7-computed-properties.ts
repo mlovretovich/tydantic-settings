@@ -1,5 +1,4 @@
-import { Settings, defineConfig } from '../src/settings';
-import { fromEnvironment, fromDotenv } from '../src/resolvers';
+import { Settings, defineConfig, fromEnvironment, fromDotenv } from '../src';
 
 /**
  * Computed Properties Example

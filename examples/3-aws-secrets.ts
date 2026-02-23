@@ -1,6 +1,4 @@
-import { Settings, createSettings } from '../src/settings';
-import { fromEnvironment, fromDotenv } from '../src/resolvers';
-import { fromAwsSecretsManager } from '../src/resolvers/aws';
+import { Settings, createSettings, fromEnvironment, fromDotenv, fromAwsSecretsManager } from '../src';
 
 /**
  * AWS Secrets Manager Configuration Example

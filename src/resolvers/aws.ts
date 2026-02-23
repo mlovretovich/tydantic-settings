@@ -1,12 +1,14 @@
-// Note: To use this, you would need to install the AWS SDK:
-// yarn add @aws-sdk/client-secrets-manager
 import { TObject, TSchema } from '@sinclair/typebox';
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { normalizeKey } from '../utils';
 import { SettingsResolver } from '../types';
 
 /**
  * Creates a resolver that fetches a JSON secret from AWS Secrets Manager.
+ *
+ * Requires `@aws-sdk/client-secrets-manager` to be installed:
+ * ```
+ * npm install @aws-sdk/client-secrets-manager
+ * ```
  *
  * @param secretId A single secret ID or an array of secret IDs (or ARNs).
  * @param region The AWS region where the secret is stored.
@@ -22,24 +24,35 @@ export function fromAwsSecretsManager(
   const separator = options?.nestingSeparator;
 
   return async (schema: TSchema) => {
+    // Dynamically import the AWS SDK — only loaded when this resolver is actually called
+    let awsSdk: typeof import('@aws-sdk/client-secrets-manager');
+    try {
+      awsSdk = await import('@aws-sdk/client-secrets-manager');
+    } catch {
+      throw new Error(
+        'The "@aws-sdk/client-secrets-manager" package is required to use fromAwsSecretsManager(). ' +
+          'Install it with: npm install @aws-sdk/client-secrets-manager'
+      );
+    }
+
     console.log('Fetching configuration from AWS Secrets Manager');
     const secretIds = Array.isArray(secretId) ? secretId : [secretId];
     if (secretIds.length === 0 || !secretIds[0]) {
       return {};
     }
 
-    const client = new SecretsManagerClient({ region });
+    const client = new awsSdk.SecretsManagerClient({ region });
 
     // Fetch all secrets in parallel for better performance
     const secretPromises = secretIds.map(async id => {
-      const command = new GetSecretValueCommand({ SecretId: id });
+      const command = new awsSdk.GetSecretValueCommand({ SecretId: id });
       try {
         const response = await client.send(command);
         if (response.SecretString) {
           return JSON.parse(response.SecretString) as Record<string, unknown>;
         }
       } catch (error) {
-        console.warn(`⚠️ Could not fetch secret '${id}' from AWS Secrets Manager.`, error);
+        console.warn(`Could not fetch secret '${id}' from AWS Secrets Manager.`, error);
       }
       return {};
     });

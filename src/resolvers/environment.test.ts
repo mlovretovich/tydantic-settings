@@ -5,7 +5,7 @@ import { Type } from '@sinclair/typebox';
 
 // Mock the dotenv library - named export
 vi.mock('dotenv', () => ({
-  config: vi.fn()
+  config: vi.fn(),
 }));
 
 describe('resolvers', () => {
@@ -13,7 +13,7 @@ describe('resolvers', () => {
   const mockSchema = Type.Object({
     HOST: Type.String(),
     PORT: Type.String(),
-    MY_VAR: Type.String()
+    MY_VAR: Type.String(),
   });
   const originalEnv = process.env;
 
@@ -54,7 +54,7 @@ describe('resolvers', () => {
     describe('prefix option', () => {
       const prefixSchema = Type.Object({
         HOST: Type.String(),
-        PORT: Type.String()
+        PORT: Type.String(),
       });
 
       it('should filter variables by prefix and strip the prefix', async () => {
@@ -95,15 +95,15 @@ describe('resolvers', () => {
       it('should work with nested separators after prefix', async () => {
         const nestedSchema = Type.Object({
           connection: Type.Object({
-            host: Type.String()
-          })
+            host: Type.String(),
+          }),
         });
 
         process.env.DATABASE__CONNECTION__HOST = 'nested-host';
 
         const resolver = fromEnvironment({
           prefix: 'DATABASE__',
-          nestingSeparator: '__'
+          nestingSeparator: '__',
         });
         const result = await resolver(nestedSchema);
 
@@ -124,14 +124,14 @@ describe('resolvers', () => {
       // We also need a schema that matches the keys.
       const dotenvSchema = Type.Object({
         DB_HOST: Type.String(),
-        DB_PORT: Type.String()
+        DB_PORT: Type.String(),
       });
 
       (dotenvConfig as MockedFunction<typeof dotenvConfig>).mockReturnValue({
         parsed: {
           DB_HOST: 'db.example.com',
-          DB_PORT: '1234'
-        }
+          DB_PORT: '1234',
+        },
       });
       process.env.DB_HOST = 'db.example.com';
       process.env.DB_PORT = '1234';
